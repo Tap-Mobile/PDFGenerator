@@ -97,6 +97,9 @@ public enum PDFPage {
 /// PDF page size (pixel, 72dpi)
 public struct PDFPageSize {
     fileprivate init() { }
+    public static var selectedSize: CGSize!
+    
+    public static let US_LETTER = CGSize(width: 612.0, height: 792.0)
     /// A4
     public static let A4 = CGSize(width: 595.0, height: 842.0)
     /// A5
