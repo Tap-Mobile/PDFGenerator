@@ -53,20 +53,27 @@ extension UIView: PDFPageRenderable {
         guard size.width > 0 && size.height > 0 else {
             throw PDFGenerateError.zeroSizeView(self)
         }
-        guard let context = UIGraphicsGetCurrentContext() else {
-            throw PDFGenerateError.invalidContext
-        }
 
         let renderFrame = CGRect(origin: CGPoint(x: origin.x * scaleFactor, y: origin.y * scaleFactor),
                                  size: CGSize(width: size.width * scaleFactor, height: size.height * scaleFactor))
         autoreleasepool {
-            let superView = view.superview
-            view.removeFromSuperview()
+            let rendererFormat = UIGraphicsImageRendererFormat.default()
+            rendererFormat.scale = 1.0
+            rendererFormat.opaque = true
+
+            let image = UIGraphicsImageRenderer(size: renderFrame.size, format: rendererFormat).image { rendererContext in
+                let ctx = rendererContext.cgContext
+                let fillColor = (view.backgroundColor ?? .white).cgColor
+                ctx.setFillColor(fillColor)
+                ctx.fill(CGRect(origin: .zero, size: renderFrame.size))
+                ctx.saveGState()
+                ctx.translateBy(x: -renderFrame.origin.x, y: -renderFrame.origin.y)
+                view.layer.render(in: ctx)
+                ctx.restoreGState()
+            }
+
             UIGraphicsBeginPDFPageWithInfo(CGRect(origin: .zero, size: renderFrame.size), nil)
-            context.translateBy(x: -renderFrame.origin.x, y: -renderFrame.origin.y)
-            view.layer.render(in: context)
-            superView?.addSubview(view)
-            superView?.layoutIfNeeded()
+            image.draw(in: CGRect(origin: .zero, size: renderFrame.size))
             completion(view)
         }
     }
